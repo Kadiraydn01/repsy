@@ -1,0 +1,15 @@
+{
+    "name": "mypackage2",
+    "version": "1.0.0",
+    "author": "Kadir Dev",
+    "dependencies": [
+        {
+            "packageName": "math",
+            "version": "1.2.3"
+        },
+        {
+            "packageName": "util",
+            "version": "2.0.0"
+        }
+    ]
+}

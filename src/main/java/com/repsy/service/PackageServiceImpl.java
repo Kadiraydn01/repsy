@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.repsy.dto.MetaDTO;
 import com.repsy.model.PackageEntity;
 import com.repsy.repository.PackageRepository;
+import com.repsy.storage.filesystem.FileSystemStorageService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,12 +16,15 @@ public class PackageServiceImpl implements PackageService {
 
     private final PackageRepository packageRepository;
     private final ObjectMapper objectMapper;
-
-    private final String basePath = "storage";
+    private final FileSystemStorageService fileSystemStorageService;
 
     public PackageServiceImpl(PackageRepository packageRepository, ObjectMapper objectMapper) {
         this.packageRepository = packageRepository;
         this.objectMapper = objectMapper;
+
+        // 📂 Uygulamanın bulunduğu klasörün içine yazmak için absolute path
+        String basePath = System.getProperty("user.dir") + File.separator + "storage";
+        this.fileSystemStorageService = new FileSystemStorageService(basePath);
     }
 
     @Override
@@ -28,28 +32,12 @@ public class PackageServiceImpl implements PackageService {
         try {
             MetaDTO meta = objectMapper.readValue(metaFile.getBytes(), MetaDTO.class);
 
-
             if (!meta.getName().equals(name) || !meta.getVersion().equals(version)) {
                 throw new RuntimeException("meta.json adı veya versiyonu URL ile uyuşmuyor.");
             }
 
-
-            String dirPath = System.getProperty("user.dir") + File.separator + basePath + File.separator + name + File.separator + version + File.separator;
-            File dir = new File(dirPath);
-            if (!dir.exists()) {
-                boolean created = dir.mkdirs();
-                if (!created) {
-                    throw new RuntimeException("Klasör oluşturulamadı: " + dirPath);
-                }
-            }
-
-
-            String metaPath = dirPath + "meta.json";
-            String packagePath = dirPath + "package.rep";
-
-
-            metaFile.transferTo(new File(metaPath));
-            packageFile.transferTo(new File(packagePath));
+            String metaPath = fileSystemStorageService.store(name, version, "meta.json", metaFile);
+            String packagePath = fileSystemStorageService.store(name, version, "package.rep", packageFile);
 
             PackageEntity entity = new PackageEntity();
             entity.setName(name);
