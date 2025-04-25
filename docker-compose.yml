@@ -7,19 +7,25 @@ services:
     environment:
       POSTGRES_DB: rep
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: 123456
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   app:
     build: .
     container_name: repsy-app
     ports:
-      - "8000:8080"
+      - "8000:8000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/rep
       SPRING_DATASOURCE_USERNAME: postgres
